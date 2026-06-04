@@ -6,6 +6,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
 open class HtmlMetadataParser(
+    protected val tagExtractor: HtmlHeadTagExtractor = HtmlHeadTagExtractor(),
     protected val openGraphParser: OpenGraphParser = OpenGraphParser(),
     protected val jsonLdParser: JsonLdParser = JsonLdParser(),
 ) {
@@ -20,16 +21,20 @@ open class HtmlMetadataParser(
     open fun parse(html: String, sourceUrl: String? = null): HtmlMetadata =
         parse(doc(html, sourceUrl), sourceUrl)
 
-    open fun parse(doc: Document, sourceUrl: String? = null): HtmlMetadata =
-        HtmlMetadata(
+    open fun parse(doc: Document, sourceUrl: String? = null): HtmlMetadata {
+        val tags = tagExtractor.extract(doc)
+
+        return HtmlMetadata(
             sourceUrl = sourceUrl,
-            standard = parseStandard(doc),
+            standard = parseStandard(doc, tags),
             openGraph = openGraphParser.parseOpenGraph(doc),
-            twitter = parseTwitter(doc),
+            twitter = parseTwitter(tags),
             jsonLd = jsonLdParser.parseJsonLd(doc),
+            // couldn't figure it out but using HtmlHeadTags for favicons did not work
             favicons = parseFavicons(doc),
             feeds = parseFeeds(doc),
         )
+    }
 
 
     open fun tryToFindSourceUrl(html: String): String? =
@@ -43,8 +48,8 @@ open class HtmlMetadataParser(
 
     // ── Standard ──────────────────────────────────────────────────────────────
 
-    protected open fun parseStandard(doc: Document): StandardMetadata {
-        val keywords = meta(doc, "keywords")
+    protected open fun parseStandard(doc: Document, tags: HtmlHeadTags): StandardMetadata {
+        val keywords = tags.nameMetaValue("keywords")
             ?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
@@ -52,10 +57,10 @@ open class HtmlMetadataParser(
 
         return StandardMetadata(
             title = doc.title().takeIf { it.isNotBlank() },
-            description = meta(doc, "description"),
+            description = tags.nameMetaValue("description"),
             keywords = keywords,
-            author = meta(doc, "author"),
-            robots = meta(doc, "robots"),
+            author = tags.nameMetaValue("author"),
+            robots = tags.nameMetaValue("robots"),
             canonicalUrl = getCanonicalUrl(doc),
             language = doc.selectFirst("html")?.attrOrNull("lang"),
         )
@@ -64,17 +69,13 @@ open class HtmlMetadataParser(
     protected open fun getCanonicalUrl(doc: Document): String? =
         doc.selectFirst("link[rel=canonical]")?.absUrl("href")?.takeUnless { it.isBlank() }
 
-    protected open fun meta(doc: Document, name: String) =
-        doc.selectFirst("meta[name=$name]")?.attrOrNull("content")
-
 
     // ── Twitter Card ──────────────────────────────────────────────────────────
 
-    protected open fun parseTwitter(doc: Document): TwitterCardMetadata {
+    protected open fun parseTwitter(tags: HtmlHeadTags): TwitterCardMetadata {
         // Twitter uses both name= and property= depending on the site
         fun meta(name: String): String? =
-            (doc.selectFirst("meta[name=$name]") ?: doc.selectFirst("meta[property=$name]"))
-                ?.attrOrNull("content")
+            tags.nameMetaValue(name) ?: tags.propertyMetaValue(name)
 
         return TwitterCardMetadata(
             card = meta("twitter:card"),
