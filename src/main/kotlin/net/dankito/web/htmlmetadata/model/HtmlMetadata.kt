@@ -1,6 +1,6 @@
 package net.dankito.web.htmlmetadata.model
 
-data class WebPageMetadata(
+data class HtmlMetadata(
     val sourceUrl: String?,
     val standard: StandardMetadata,
     val openGraph: OpenGraphMetadata,

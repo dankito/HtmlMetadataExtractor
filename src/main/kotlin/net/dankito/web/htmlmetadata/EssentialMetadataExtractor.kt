@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 /**
- * Distills [WebPageMetadata] into [EssentialPageMetadata] using a
+ * Distills [HtmlMetadata] into [EssentialPageMetadata] using a
  * priority-based resolution strategy for each field.
  */
 open class EssentialMetadataExtractor(
@@ -16,7 +16,7 @@ open class EssentialMetadataExtractor(
     open fun extract(html: String, sourceUrl: String? = null): EssentialPageMetadata =
         extract(metadataParser.parse(html, sourceUrl))
 
-    open fun extract(metadata: WebPageMetadata): EssentialPageMetadata {
+    open fun extract(metadata: HtmlMetadata): EssentialPageMetadata {
         // Prefer the first JSON-LD block that looks like an article/content type
         val jsonLd = metadata.jsonLd.firstOrNull { it.type?.contains("article", ignoreCase = true) == true }
             ?: metadata.jsonLd.firstOrNull { it.type?.contains("blog", ignoreCase = true) == true }
@@ -50,21 +50,21 @@ open class EssentialMetadataExtractor(
 
     // ── Field resolvers ───────────────────────────────────────────────────────
 
-    protected open  fun resolveTitle(raw: WebPageMetadata, jsonLd: JsonLdMetadata?): String? =
+    protected open  fun resolveTitle(raw: HtmlMetadata, jsonLd: JsonLdMetadata?): String? =
         raw.openGraph.title
             ?: jsonLd?.headline
             ?: raw.standard.title
 
-    protected open  fun resolveDescription(raw: WebPageMetadata, jsonLd: JsonLdMetadata?): String? =
+    protected open  fun resolveDescription(raw: HtmlMetadata, jsonLd: JsonLdMetadata?): String? =
         raw.openGraph.description
             ?: raw.standard.description
             ?: jsonLd?.description
 
-    protected open  fun resolveImageUrl(raw: WebPageMetadata, jsonLd: JsonLdMetadata?): String? =
+    protected open  fun resolveImageUrl(raw: HtmlMetadata, jsonLd: JsonLdMetadata?): String? =
         raw.openGraph.images.firstOrNull()?.url
             ?: jsonLd?.images?.firstOrNull()?.url
 
-    protected open  fun resolveAuthor(raw: WebPageMetadata, jsonLd: JsonLdMetadata?): String? {
+    protected open  fun resolveAuthor(raw: HtmlMetadata, jsonLd: JsonLdMetadata?): String? {
         // JSON-LD authors as comma-joined names if multiple
         val jsonLdAuthor = jsonLd?.authors
             ?.mapNotNull { it.name }
@@ -76,7 +76,7 @@ open class EssentialMetadataExtractor(
             ?: raw.standard.author
     }
 
-    protected open  fun resolveTags(raw: WebPageMetadata, jsonLd: JsonLdMetadata?): List<String> {
+    protected open  fun resolveTags(raw: HtmlMetadata, jsonLd: JsonLdMetadata?): List<String> {
         val tags = (raw.openGraph.articleTags + (jsonLd?.keywords ?: emptyList()))
             .map { it.trim() }
             .filter { it.isNotEmpty() }
@@ -85,7 +85,7 @@ open class EssentialMetadataExtractor(
         // Note: we intentionally skip meta[keywords] as it's unreliable
     }
 
-    protected open  fun resolveFavicon(raw: WebPageMetadata): String? {
+    protected open  fun resolveFavicon(raw: HtmlMetadata): String? {
         val favicons = raw.favicons
         if (favicons.isEmpty()) return null
 

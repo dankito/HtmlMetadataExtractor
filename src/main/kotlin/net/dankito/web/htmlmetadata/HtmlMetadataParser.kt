@@ -17,10 +17,10 @@ open class HtmlMetadataParser(
      * @param sourceUrl URL of the page the HTML was fetched from. Only required to resolve relative URLs to absolute URLs.
      * @return Metadata parsed from the HTML
      */
-    open fun parse(html: String, sourceUrl: String? = null): WebPageMetadata {
+    open fun parse(html: String, sourceUrl: String? = null): HtmlMetadata {
         val doc = doc(html, sourceUrl)
 
-        return WebPageMetadata(
+        return HtmlMetadata(
             sourceUrl = sourceUrl,
             standard = parseStandard(doc),
             openGraph = openGraphParser.parseOpenGraph(doc),
