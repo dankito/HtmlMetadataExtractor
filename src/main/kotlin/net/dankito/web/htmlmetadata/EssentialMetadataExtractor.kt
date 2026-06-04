@@ -1,6 +1,7 @@
 package net.dankito.web.htmlmetadata
 
 import net.dankito.web.htmlmetadata.model.*
+import org.jsoup.nodes.Document
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -15,6 +16,9 @@ open class EssentialMetadataExtractor(
 
     open fun extract(html: String, sourceUrl: String? = null): EssentialPageMetadata =
         extract(metadataParser.parse(html, sourceUrl))
+
+    open fun extract(doc: Document, sourceUrl: String? = null): EssentialPageMetadata =
+        extract(metadataParser.parse(doc, sourceUrl))
 
     open fun extract(metadata: HtmlMetadata): EssentialPageMetadata {
         // Prefer the first JSON-LD block that looks like an article/content type
