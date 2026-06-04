@@ -6,9 +6,9 @@ import net.dankito.web.htmlmetadata.model.OpenGraphMetadata
 import net.dankito.web.htmlmetadata.model.OpenGraphVideo
 import org.jsoup.nodes.Document
 
-open class OpenGraphParser {
+open class OpenGraphExtractor {
 
-    open fun parseOpenGraph(doc: Document): OpenGraphMetadata {
+    open fun extractOpenGraph(doc: Document): OpenGraphMetadata {
         // Collect all og: meta tags into a multimap (property -> list of values)
         // We need a list because og:image, og:image:width etc. can repeat
         val props = mutableMapOf<String, MutableList<String>>()

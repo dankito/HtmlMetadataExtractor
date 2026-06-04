@@ -7,14 +7,14 @@ import org.jsoup.nodes.Document
 
 open class HtmlMetadataParser(
     protected val tagExtractor: HtmlHeadTagExtractor = HtmlHeadTagExtractor(),
-    protected val openGraphParser: OpenGraphParser = OpenGraphParser(),
+    protected val openGraphExtractor: OpenGraphExtractor = OpenGraphExtractor(),
     protected val jsonLdParser: JsonLdParser = JsonLdParser(),
-    protected val faviconParser: FaviconParser = FaviconParser(),
-    protected val rssFeedParser: RssFeedParser = RssFeedParser(),
+    protected val faviconExtractor: FaviconExtractor = FaviconExtractor(),
+    protected val rssFeedExtractor: RssFeedExtractor = RssFeedExtractor(),
 ) {
 
     /**
-     * Parses HTML and returns metadata.
+     * Parses HTML and returns its metadata.
      *
      * @param html HTML to parse
      * @param sourceUrl URL of the page the HTML was fetched from. Only required to resolve relative URLs to absolute URLs.
@@ -29,12 +29,12 @@ open class HtmlMetadataParser(
         return HtmlMetadata(
             sourceUrl = sourceUrl,
             standard = parseStandard(doc, tags),
-            openGraph = openGraphParser.parseOpenGraph(doc),
+            openGraph = openGraphExtractor.extractOpenGraph(doc),
             twitter = parseTwitter(tags),
             jsonLd = jsonLdParser.parseJsonLd(doc),
             // couldn't figure it out but using HtmlHeadTags for favicons did not work
-            favicons = faviconParser.parseFavicons(doc),
-            feeds = rssFeedParser.parseFeeds(doc),
+            favicons = faviconExtractor.extractFavicons(doc),
+            feeds = rssFeedExtractor.extractFeeds(doc),
         )
     }
 

@@ -5,12 +5,12 @@ import net.dankito.web.htmlmetadata.model.Favicon
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
-open class FaviconParser {
+open class FaviconExtractor {
 
-    open fun parseFavicons(html: String, baseUrl: String): List<Favicon> =
-        parseFavicons(Jsoup.parse(html, baseUrl))
+    open fun extractFavicons(html: String, baseUrl: String): List<Favicon> =
+        extractFavicons(Jsoup.parse(html, baseUrl))
 
-    open fun parseFavicons(doc: Document): List<Favicon> {
+    open fun extractFavicons(doc: Document): List<Favicon> {
         val rels = setOf(
             "icon", "shortcut icon",
             "apple-touch-icon", "apple-touch-icon-precomposed",
