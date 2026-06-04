@@ -9,19 +9,27 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
 open class HtmlMetadataParser(
+    protected val openGraphParser: OpenGraphParser = OpenGraphParser(),
     protected val objectMapper: ObjectMapper = ObjectMapper().apply {
         registerKotlinModule()
         findAndRegisterModules()
     },
 ) {
 
+    /**
+     * Parses HTML and returns metadata.
+     *
+     * @param html HTML to parse
+     * @param sourceUrl URL of the page the HTML was fetched from. Only required to resolve relative URLs to absolute URLs.
+     * @return Metadata parsed from the HTML
+     */
     open fun parse(html: String, sourceUrl: String? = null): WebPageMetadata {
         val doc = doc(html, sourceUrl)
 
         return WebPageMetadata(
             sourceUrl = sourceUrl,
             standard = parseStandard(doc),
-            openGraph = parseOpenGraph(doc),
+            openGraph = openGraphParser.parseOpenGraph(doc),
             twitter = parseTwitter(doc),
             jsonLd = parseJsonLd(doc),
             favicons = parseFavicons(doc),
@@ -30,13 +38,13 @@ open class HtmlMetadataParser(
     }
 
 
-    open fun tryToFindUrl(html: String): String? {
-        val doc = doc(html)
+    open fun tryToFindSourceUrl(html: String): String? =
+        tryToFindSourceUrl(doc(html))
 
-        return getCanonicalUrl(doc)
+    open fun tryToFindSourceUrl(doc: Document): String? =
+        getCanonicalUrl(doc)
             ?: doc.head().selectFirst("base")?.attrOrNull("href")
             ?: doc.head().selectFirst("meta[property^=og:url]")?.absUrl("content")
-    }
 
 
     // ── Standard ──────────────────────────────────────────────────────────────
@@ -65,115 +73,6 @@ open class HtmlMetadataParser(
     protected open fun meta(doc: Document, name: String) =
         doc.selectFirst("meta[name=$name]")?.attrOrNull("content")
 
-    // ── Open Graph ────────────────────────────────────────────────────────────
-
-    protected open fun parseOpenGraph(doc: Document): OpenGraphMetadata {
-        // Collect all og: meta tags into a multimap (property -> list of values)
-        // We need a list because og:image, og:image:width etc. can repeat
-        val props = mutableMapOf<String, MutableList<String>>()
-        doc.select("meta[property^=og:], meta[property^=article:], meta[property^=profile:]")
-            .forEach { el ->
-                val key = el.attr("property").lowercase()
-                val value = el.attr("content")
-                if (value.isNotBlank()) {
-                    props.getOrPut(key) { mutableListOf() }.add(value)
-                }
-            }
-
-        fun first(key: String) = props[key]?.firstOrNull()
-        fun all(key: String) = props[key] ?: emptyList()
-
-        // Parse grouped og:image blocks (each og:image starts a new group)
-        val images = buildList {
-            var current: MutableMap<String, String>? = null
-            doc.select("meta[property^=og:image]").forEach { el ->
-                val prop = el.attr("property").lowercase()
-                val value = el.attr("content")
-                if (prop == "og:image") {
-                    current?.let { add(it.toOpenGraphImage()) }
-                    current = mutableMapOf("url" to value)
-                } else {
-                    current?.put(prop.removePrefix("og:image:"), value)
-                }
-            }
-            current?.let { add(it.toOpenGraphImage()) }
-        }
-
-        val videos = buildList {
-            var current: MutableMap<String, String>? = null
-            doc.select("meta[property^=og:video]").forEach { el ->
-                val prop = el.attr("property").lowercase()
-                val value = el.attr("content")
-                if (prop == "og:video") {
-                    current?.let { add(it.toOpenGraphVideo()) }
-                    current = mutableMapOf("url" to value)
-                } else {
-                    current?.put(prop.removePrefix("og:video:"), value)
-                }
-            }
-            current?.let { add(it.toOpenGraphVideo()) }
-        }
-
-        val audios = buildList {
-            var current: MutableMap<String, String>? = null
-            doc.select("meta[property^=og:audio]").forEach { el ->
-                val prop = el.attr("property").lowercase()
-                val value = el.attr("content")
-                if (prop == "og:audio") {
-                    current?.let { add(it.toOpenGraphAudio()) }
-                    current = mutableMapOf("url" to value)
-                } else {
-                    current?.put(prop.removePrefix("og:audio:"), value)
-                }
-            }
-            current?.let { add(it.toOpenGraphAudio()) }
-        }
-
-        return OpenGraphMetadata(
-            title = first("og:title"),
-            description = first("og:description"),
-            url = first("og:url"),
-            siteName = first("og:site_name"),
-            locale = first("og:locale"),
-            localeAlternates = all("og:locale:alternate"),
-            type = first("og:type"),
-            images = images,
-            videos = videos,
-            audios = audios,
-            articleAuthor = all("article:author"),
-            articlePublishedTime = first("article:published_time"),
-            articleModifiedTime = first("article:modified_time"),
-            articleExpirationTime = first("article:expiration_time"),
-            articleSection = first("article:section"),
-            articleTags = all("article:tag"),
-            profileFirstName = first("profile:first_name"),
-            profileLastName = first("profile:last_name"),
-            profileUsername = first("profile:username"),
-        )
-    }
-
-    protected open fun Map<String, String>.toOpenGraphImage() = OpenGraphImage(
-        url = get("url") ?: "",
-        secureUrl = get("secure_url"),
-        type = get("type"),
-        width = get("width")?.toIntOrNull(),
-        height = get("height")?.toIntOrNull(),
-        alt = get("alt"),
-    )
-
-    protected open fun Map<String, String>.toOpenGraphVideo() = OpenGraphVideo(
-        url = get("url") ?: "",
-        secureUrl = get("secure_url"),
-        type = get("type"),
-        width = get("width")?.toIntOrNull(),
-        height = get("height")?.toIntOrNull(),
-    )
-
-    protected open fun Map<String, String>.toOpenGraphAudio() = OpenGraphAudio(
-        url = get("url") ?: "",
-        secureUrl = get("secure_url"),
-        type = get("type"),
-    )
 
     // ── Twitter Card ──────────────────────────────────────────────────────────
 
