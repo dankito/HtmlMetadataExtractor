@@ -8,14 +8,14 @@ import net.dankito.web.htmlmetadata.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
-class HtmlMetadataParser(
-    private val objectMapper: ObjectMapper = ObjectMapper().apply {
+open class HtmlMetadataParser(
+    protected val objectMapper: ObjectMapper = ObjectMapper().apply {
         registerKotlinModule()
         findAndRegisterModules()
     },
 ) {
 
-    fun parse(html: String, sourceUrl: String? = null): WebPageMetadata {
+    open fun parse(html: String, sourceUrl: String? = null): WebPageMetadata {
         val doc = doc(html, sourceUrl)
 
         return WebPageMetadata(
@@ -30,7 +30,7 @@ class HtmlMetadataParser(
     }
 
 
-    fun tryToFindUrl(html: String): String? {
+    open fun tryToFindUrl(html: String): String? {
         val doc = doc(html)
 
         return getCanonicalUrl(doc)
@@ -41,7 +41,7 @@ class HtmlMetadataParser(
 
     // ── Standard ──────────────────────────────────────────────────────────────
 
-    private fun parseStandard(doc: Document): StandardMetadata {
+    protected open fun parseStandard(doc: Document): StandardMetadata {
         val keywords = meta(doc, "keywords")
             ?.split(",")
             ?.map { it.trim() }
@@ -59,15 +59,15 @@ class HtmlMetadataParser(
         )
     }
 
-    private fun getCanonicalUrl(doc: Document): String? =
+    protected open fun getCanonicalUrl(doc: Document): String? =
         doc.selectFirst("link[rel=canonical]")?.absUrl("href")?.takeUnless { it.isBlank() }
 
-    private fun meta(doc: Document, name: String) =
+    protected open fun meta(doc: Document, name: String) =
         doc.selectFirst("meta[name=$name]")?.attrOrNull("content")
 
     // ── Open Graph ────────────────────────────────────────────────────────────
 
-    private fun parseOpenGraph(doc: Document): OpenGraphMetadata {
+    protected open fun parseOpenGraph(doc: Document): OpenGraphMetadata {
         // Collect all og: meta tags into a multimap (property -> list of values)
         // We need a list because og:image, og:image:width etc. can repeat
         val props = mutableMapOf<String, MutableList<String>>()
@@ -152,7 +152,7 @@ class HtmlMetadataParser(
         )
     }
 
-    private fun Map<String, String>.toOpenGraphImage() = OpenGraphImage(
+    protected open fun Map<String, String>.toOpenGraphImage() = OpenGraphImage(
         url = get("url") ?: "",
         secureUrl = get("secure_url"),
         type = get("type"),
@@ -161,7 +161,7 @@ class HtmlMetadataParser(
         alt = get("alt"),
     )
 
-    private fun Map<String, String>.toOpenGraphVideo() = OpenGraphVideo(
+    protected open fun Map<String, String>.toOpenGraphVideo() = OpenGraphVideo(
         url = get("url") ?: "",
         secureUrl = get("secure_url"),
         type = get("type"),
@@ -169,7 +169,7 @@ class HtmlMetadataParser(
         height = get("height")?.toIntOrNull(),
     )
 
-    private fun Map<String, String>.toOpenGraphAudio() = OpenGraphAudio(
+    protected open fun Map<String, String>.toOpenGraphAudio() = OpenGraphAudio(
         url = get("url") ?: "",
         secureUrl = get("secure_url"),
         type = get("type"),
@@ -177,7 +177,7 @@ class HtmlMetadataParser(
 
     // ── Twitter Card ──────────────────────────────────────────────────────────
 
-    private fun parseTwitter(doc: Document): TwitterCardMetadata {
+    protected open fun parseTwitter(doc: Document): TwitterCardMetadata {
         // Twitter uses both name= and property= depending on the site
         fun meta(name: String): String? =
             (doc.selectFirst("meta[name=$name]") ?: doc.selectFirst("meta[property=$name]"))
@@ -198,7 +198,7 @@ class HtmlMetadataParser(
 
     // ── JSON-LD ───────────────────────────────────────────────────────────────
 
-    private fun parseJsonLd(doc: Document): List<JsonLdMetadata> {
+    protected open fun parseJsonLd(doc: Document): List<JsonLdMetadata> {
         return doc.select("script[type=application/ld+json]")
             .mapNotNull { el ->
                 runCatching { objectMapper.readTree(el.data()) }.getOrNull()
@@ -214,7 +214,7 @@ class HtmlMetadataParser(
             .mapNotNull { node -> parseJsonLdNode(node) }
     }
 
-    private fun parseJsonLdNode(node: JsonNode): JsonLdMetadata? {
+    protected open fun parseJsonLdNode(node: JsonNode): JsonLdMetadata? {
         val type = node["@type"]?.asText() ?: return null
 
         fun str(key: String) = node[key]?.asText()?.takeIf { it.isNotBlank() }
@@ -287,7 +287,7 @@ class HtmlMetadataParser(
 
     // ── Favicons ──────────────────────────────────────────────────────────────
 
-    private fun parseFavicons(doc: Document): List<Favicon> {
+    protected open fun parseFavicons(doc: Document): List<Favicon> {
         val rels = setOf(
             "icon", "shortcut icon",
             "apple-touch-icon", "apple-touch-icon-precomposed",
@@ -308,10 +308,10 @@ class HtmlMetadataParser(
     }
 
 
-    fun parseFeeds(html: String, sourceUrl: String) =
+    open fun parseFeeds(html: String, sourceUrl: String) =
         parseFeeds(doc(html, sourceUrl))
 
-    private fun parseFeeds(doc: Document): List<FeedLink> = doc.select("link[rel=alternate][type*=xml]")
+    protected open fun parseFeeds(doc: Document): List<FeedLink> = doc.select("link[rel=alternate][type*=xml]")
         .filter { it.attr("type").let { t -> "rss" in t || "atom" in t } }
         .mapNotNull { el ->
             val href = el.absUrl("href").takeIf { it.isNotBlank() } ?: return@mapNotNull null
@@ -323,7 +323,7 @@ class HtmlMetadataParser(
         }
 
 
-    private fun doc(html: String, baseUrl: String? = null): Document =
+    protected open fun doc(html: String, baseUrl: String? = null): Document =
         Jsoup.parse(html, baseUrl ?: "")
 
 }
