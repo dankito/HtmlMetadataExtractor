@@ -17,6 +17,7 @@ repositories {
 
 dependencies {
     implementation("org.jsoup:jsoup:1.22.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.2")
 
     testImplementation(kotlin("test"))
 }
