@@ -5,7 +5,7 @@ import net.dankito.web.htmlmetadata.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
-open class HtmlMetadataParser(
+open class HtmlMetadataExtractor(
     protected val tagExtractor: HtmlHeadTagExtractor = HtmlHeadTagExtractor(),
     protected val openGraphExtractor: OpenGraphExtractor = OpenGraphExtractor(),
     protected val jsonLdParser: JsonLdParser = JsonLdParser(),
@@ -14,23 +14,23 @@ open class HtmlMetadataParser(
 ) {
 
     /**
-     * Parses HTML and returns its metadata.
+     * Parses HTML and extracts its metadata.
      *
      * @param html HTML to parse
      * @param sourceUrl URL of the page the HTML was fetched from. Only required to resolve relative URLs to absolute URLs.
-     * @return Metadata parsed from the HTML
+     * @return Metadata extracted from the HTML
      */
-    open fun parse(html: String, sourceUrl: String? = null): HtmlMetadata =
-        parse(doc(html, sourceUrl), sourceUrl)
+    open fun extract(html: String, sourceUrl: String? = null): HtmlMetadata =
+        extract(doc(html, sourceUrl), sourceUrl)
 
-    open fun parse(doc: Document, sourceUrl: String? = null): HtmlMetadata {
+    open fun extract(doc: Document, sourceUrl: String? = null): HtmlMetadata {
         val tags = tagExtractor.extract(doc)
 
         return HtmlMetadata(
             sourceUrl = sourceUrl,
-            standard = parseStandard(doc, tags),
+            standard = extractStandardMetadata(doc, tags),
             openGraph = openGraphExtractor.extractOpenGraph(doc),
-            twitter = parseTwitter(tags),
+            twitter = extractTwitterMetadata(tags),
             jsonLd = jsonLdParser.parseJsonLd(doc),
             // couldn't figure it out but using HtmlHeadTags for favicons did not work
             favicons = faviconExtractor.extractFavicons(doc),
@@ -50,7 +50,7 @@ open class HtmlMetadataParser(
 
     // ── Standard ──────────────────────────────────────────────────────────────
 
-    protected open fun parseStandard(doc: Document, tags: HtmlHeadTags): StandardMetadata {
+    protected open fun extractStandardMetadata(doc: Document, tags: HtmlHeadTags): StandardMetadata {
         val keywords = tags.nameMetaValue("keywords")
             ?.split(",")
             ?.map { it.trim() }
@@ -74,7 +74,7 @@ open class HtmlMetadataParser(
 
     // ── Twitter Card ──────────────────────────────────────────────────────────
 
-    protected open fun parseTwitter(tags: HtmlHeadTags): TwitterCardMetadata {
+    protected open fun extractTwitterMetadata(tags: HtmlHeadTags): TwitterCardMetadata {
         // Twitter uses both name= and property= depending on the site
         fun meta(name: String): String? =
             tags.nameMetaValue(name) ?: tags.propertyMetaValue(name)

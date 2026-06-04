@@ -11,14 +11,14 @@ import java.time.format.DateTimeParseException
  * priority-based resolution strategy for each field.
  */
 open class EssentialMetadataExtractor(
-    protected val metadataParser: HtmlMetadataParser = HtmlMetadataParser(),
+    protected val metadataExtractor: HtmlMetadataExtractor = HtmlMetadataExtractor(),
 ) {
 
     open fun extract(html: String, sourceUrl: String? = null): EssentialPageMetadata =
-        extract(metadataParser.parse(html, sourceUrl))
+        extract(metadataExtractor.extract(html, sourceUrl))
 
     open fun extract(doc: Document, sourceUrl: String? = null): EssentialPageMetadata =
-        extract(metadataParser.parse(doc, sourceUrl))
+        extract(metadataExtractor.extract(doc, sourceUrl))
 
     open fun extract(metadata: HtmlMetadata): EssentialPageMetadata {
         // Prefer the first JSON-LD block that looks like an article/content type
@@ -103,9 +103,14 @@ open class EssentialMetadataExtractor(
 
     protected open  fun resolveDate(vararg candidates: String?): OffsetDateTime? {
         for (candidate in candidates) {
-            if (candidate.isNullOrBlank()) continue
+            if (candidate.isNullOrBlank()) {
+                continue
+            }
+
             val parsed = tryParseDate(candidate)
-            if (parsed != null) return parsed
+            if (parsed != null) {
+                return parsed
+            }
         }
         return null
     }

@@ -3,4 +3,4 @@ plugins {
 }
 
 
-rootProject.name = "HtmlMetadataParser"
+rootProject.name = "HtmlMetadataExtractor"

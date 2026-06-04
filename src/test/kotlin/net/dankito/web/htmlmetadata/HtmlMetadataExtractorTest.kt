@@ -9,14 +9,14 @@ import net.dankito.web.htmlmetadata.test.TestData
 import kotlin.test.Test
 
 
-class HtmlMetadataParserTest {
+class HtmlMetadataExtractorTest {
 
-    private val underTest = HtmlMetadataParser()
+    private val underTest = HtmlMetadataExtractor()
 
 
     @Test
-    fun parse() {
-        val result = underTest.parse(TestData.HeiseNewsHeader, "https://www.heise.de/news/Digitale-Unabhaengigkeit-EU-plant-harten-Zugriff-auf-staatliche-IT-Strukturen-11317332.html")
+    fun extract() {
+        val result = underTest.extract(TestData.HeiseNewsHeader, "https://www.heise.de/news/Digitale-Unabhaengigkeit-EU-plant-harten-Zugriff-auf-staatliche-IT-Strukturen-11317332.html")
 
         assertThat(result.standard.title).isEqualTo("Digitale Unabhängigkeit: EU plant harten Zugriff auf staatliche IT-Strukturen | heise online")
         assertThat(result.standard.description).isEqualTo("Mit einem neuen Paket für technologische Souveränität will die EU-Kommission die Abhängigkeit von US-Anbietern brechen. Sie fordert Hunderte Milliarden Einsatz.")
