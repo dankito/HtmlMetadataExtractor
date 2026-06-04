@@ -9,6 +9,8 @@ open class HtmlMetadataParser(
     protected val tagExtractor: HtmlHeadTagExtractor = HtmlHeadTagExtractor(),
     protected val openGraphParser: OpenGraphParser = OpenGraphParser(),
     protected val jsonLdParser: JsonLdParser = JsonLdParser(),
+    protected val faviconParser: FaviconParser = FaviconParser(),
+    protected val rssFeedParser: RssFeedParser = RssFeedParser(),
 ) {
 
     /**
@@ -31,8 +33,8 @@ open class HtmlMetadataParser(
             twitter = parseTwitter(tags),
             jsonLd = jsonLdParser.parseJsonLd(doc),
             // couldn't figure it out but using HtmlHeadTags for favicons did not work
-            favicons = parseFavicons(doc),
-            feeds = parseFeeds(doc),
+            favicons = faviconParser.parseFavicons(doc),
+            feeds = rssFeedParser.parseFeeds(doc),
         )
     }
 
@@ -89,44 +91,6 @@ open class HtmlMetadataParser(
             imageAlt = meta("twitter:image:alt"),
         )
     }
-
-
-    // ── Favicons ──────────────────────────────────────────────────────────────
-
-    protected open fun parseFavicons(doc: Document): List<Favicon> {
-        val rels = setOf(
-            "icon", "shortcut icon",
-            "apple-touch-icon", "apple-touch-icon-precomposed",
-            "mask-icon",         // Safari pinned tab SVG
-            "fluid-icon",        // Fluid app
-        )
-        return doc.select("link[rel]")
-            .filter { el -> el.attr("rel").lowercase() in rels }
-            .mapNotNull { el ->
-                val href = el.absUrl("href").takeUnless { it.isBlank() } ?: return@mapNotNull null
-                Favicon(
-                    href = href,
-                    rel = el.attr("rel").lowercase(),
-                    sizes = el.attrOrNull("sizes"),
-                    type = el.attrOrNull("type"),
-                )
-            }
-    }
-
-
-    open fun parseFeeds(html: String, sourceUrl: String) =
-        parseFeeds(doc(html, sourceUrl))
-
-    protected open fun parseFeeds(doc: Document): List<FeedLink> = doc.select("link[rel=alternate][type*=xml]")
-        .filter { it.attr("type").let { t -> "rss" in t || "atom" in t } }
-        .mapNotNull { el ->
-            val href = el.absUrl("href").takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            FeedLink(
-                url = href,
-                type = el.attr("type"),
-                title = el.attrOrNull("title"),
-            )
-        }
 
 
     protected open fun doc(html: String, baseUrl: String? = null): Document =
