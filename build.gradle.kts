@@ -16,8 +16,11 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jsoup:jsoup:1.22.2")
+
     testImplementation(kotlin("test"))
 }
+
 
 tasks.test {
     useJUnitPlatform()
