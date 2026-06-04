@@ -18,7 +18,7 @@ open class HtmlMetadataParser(
      * @return Metadata parsed from the HTML
      */
     open fun parse(html: String, sourceUrl: String? = null): HtmlMetadata =
-        parse(doc(html, sourceUrl))
+        parse(doc(html, sourceUrl), sourceUrl)
 
     open fun parse(doc: Document, sourceUrl: String? = null): HtmlMetadata =
         HtmlMetadata(

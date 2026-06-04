@@ -20,6 +20,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.2")
 
     testImplementation(kotlin("test"))
+    testImplementation("com.willowtreeapps.assertk:assertk:0.28.1")
 }
 
 
