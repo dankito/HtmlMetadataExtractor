@@ -1,5 +1,6 @@
 package net.dankito.web.htmlmetadata
 
+import net.dankito.web.htmlmetadata.extensions.attrOrNull
 import net.dankito.web.htmlmetadata.model.HtmlHeadTags
 import net.dankito.web.htmlmetadata.model.LinkTag
 import net.dankito.web.htmlmetadata.model.MetaTag
@@ -17,35 +18,35 @@ class HtmlHeadTagExtractor {
 
         val metaTags = doc.select("meta").map { el ->
             MetaTag(
-                name = el.attr("name").takeIf { it.isNotEmpty() },
-                httpEquiv = el.attr("http-equiv").takeIf { it.isNotEmpty() },
-                content = el.attr("content").takeIf { it.isNotEmpty() },
-                charset = el.attr("charset").takeIf { it.isNotEmpty() },
-                property = el.attr("property").takeIf { it.isNotEmpty() },
-                media = el.attr("media").takeIf { it.isNotEmpty() },
-                referrerpolicy = el.attr("referrerpolicy").takeIf { it.isNotEmpty() },
+                name = el.attrOrNull("name"),
+                httpEquiv = el.attrOrNull("http-equiv"),
+                content = el.attrOrNull("content"),
+                charset = el.attrOrNull("charset"),
+                property = el.attrOrNull("property"),
+                media = el.attrOrNull("media"),
+                referrerpolicy = el.attrOrNull("referrerpolicy"),
             )
         }
 
         val linkTags = doc.select("link").map { el ->
             LinkTag(
-                href = el.absUrl("href").takeIf { it.isNotEmpty() },
-                rel = el.attr("rel").takeIf { it.isNotEmpty() },
-                type = el.attr("type").takeIf { it.isNotEmpty() },
-                media = el.attr("media").takeIf { it.isNotEmpty() },
-                hreflang = el.attr("hreflang").takeIf { it.isNotEmpty() },
-                `as` = el.attr("as").takeIf { it.isNotEmpty() },
-                integrity = el.attr("integrity").takeIf { it.isNotEmpty() },
-                crossorigin = el.attr("crossorigin").takeIf { it.isNotEmpty() },
-                fetchpriority = el.attr("fetchpriority").takeIf { it.isNotEmpty() },
-                sizes = el.attr("sizes").takeIf { it.isNotEmpty() },
-                blocking = el.attr("blocking").takeIf { it.isNotEmpty() },
-                referrerpolicy = el.attr("referrerpolicy").takeIf { it.isNotEmpty() },
-                color = el.attr("color").takeIf { it.isNotEmpty() },
-                title = el.attr("title").takeIf { it.isNotEmpty() },
+                href = el.absUrl("href"),
+                rel = el.attrOrNull("rel"),
+                type = el.attrOrNull("type"),
+                media = el.attrOrNull("media"),
+                hreflang = el.attrOrNull("hreflang"),
+                `as` = el.attrOrNull("as"),
+                integrity = el.attrOrNull("integrity"),
+                crossorigin = el.attrOrNull("crossorigin"),
+                fetchpriority = el.attrOrNull("fetchpriority"),
+                sizes = el.attrOrNull("sizes"),
+                blocking = el.attrOrNull("blocking"),
+                referrerpolicy = el.attrOrNull("referrerpolicy"),
+                color = el.attrOrNull("color"),
+                title = el.attrOrNull("title"),
                 disabled = el.hasAttr("disabled"),
-                imagesrcset = el.attr("imagesrcset").takeIf { it.isNotEmpty() },
-                imagesizes = el.attr("imagesizes").takeIf { it.isNotEmpty() },
+                imagesrcset = el.attrOrNull("imagesrcset"),
+                imagesizes = el.attrOrNull("imagesizes"),
             )
         }
 
